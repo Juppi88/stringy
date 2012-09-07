@@ -303,7 +303,7 @@ char* str_dup( const char* str, size_t len )
 
 	assert( ret != NULL ); // Something went horribly wrong
 
-	memcpy( ret, str, len );
+	str_cpy( ret, str, len );
 	return ret;
 }
 
@@ -320,7 +320,7 @@ wchar_t* wstr_dup( const wchar_t* str, size_t len )
 
 	assert( ret != NULL );
 
-	memcpy( ret, str, len );
+	wstr_cpy( ret, str, len );
 	return ret;
 }
 

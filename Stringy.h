@@ -15,6 +15,7 @@
 #define __STRINGY_H
 
 #include "Defines.h"
+#include <stdio.h>
 
 #ifdef MYLLY_UNICODE
 	#define mstrequal	wstr_equal
