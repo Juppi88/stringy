@@ -15,7 +15,14 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef _WIN32
+#include <alloca.h>
+#endif
+
 #define GETWLENGTH(x) x /= sizeof(wchar_t) // Nasty hack for wide string lengths TODO: clean up later
+
+static char*		last	= NULL;
+static wchar_t*		wlast	= NULL;
 
 /**
  * Tests whether the two given strings match.
@@ -35,12 +42,9 @@ bool str_equal( const char* str1, const char* str2 )
 
 bool wstr_equal( const wchar_t* str1, const wchar_t* str2 )
 {
-	while ( *str1 == *str2 )
+	while ( *str1 == *str2++ )
 	{
-		if ( !*str1 ) return true;
-
-		str1 += sizeof(wchar_t);
-		str2 += sizeof(wchar_t);
+		if ( !*str1++ ) return true;
 	}
 
 	return false;
@@ -73,10 +77,7 @@ void wstr_cpy( wchar_t* dest, const wchar_t* source, size_t size )
 	{
 		while ( ( --size ) && ( *source ) )
 		{
-			*dest = *source;
-
-			dest	+= sizeof(wchar_t);
-			source	+= sizeof(wchar_t);
+			*dest++ = *source++;
 		}
 	}
 
@@ -95,7 +96,7 @@ void str_cat( char* dest, const char* source, size_t size )
 	{
 		while ( ( --size ) && ( *dest ) )
 		{
-			*dest++;
+			dest++;
 		}
 
 		while ( ( --size ) && ( *source ) )
@@ -115,16 +116,12 @@ void wstr_cat( wchar_t* dest, const wchar_t* source, size_t size )
 	{
 		while ( ( --size ) && ( *dest ) )
 		{
-			*dest++;
-			dest += sizeof(wchar_t);
+			dest++;
 		}
 
 		while ( ( --size ) && ( *source ) )
 		{
 			*dest++ = *source++;
-
-			dest += sizeof(wchar_t);
-			source += sizeof(wchar_t);
 		}
 	}
 
@@ -173,28 +170,13 @@ void wstr_ins( wchar_t* dest, const wchar_t* source, size_t size, size_t pos )
 	temp = tmp = alloca( size );
 
 	for ( s = dest; s < dest+pos && *s; )
-	{
-		*tmp = *s;
-
-		tmp += sizeof(wchar_t);
-		s += sizeof(wchar_t);
-	}
+		*tmp++ = *s++;
 
 	while ( *source )
-	{
-		*tmp = *source;
-
-		tmp += sizeof(wchar_t);
-		source += sizeof(wchar_t);
-	}
+		*tmp++ = *source++;
 
 	while ( *s )
-	{
-		*tmp = *s;
-
-		tmp += sizeof(wchar_t);
-		s += sizeof(wchar_t);
-	}
+		*tmp++ = *s++;
 
 	*tmp = '\0';
 
@@ -223,65 +205,238 @@ void wstr_lwr( wchar_t* str )
 	{
 		if ( !*s ) break;
 		if ( *s >= 'A' && *s <= 'Z' ) { *s += 0x20; }
-		s += sizeof(wchar_t);
+		++s;
 	}
 }
 
 /**
  * Splits the given string into tokens separated by a given delimiter.
  * @arg str - The string to be split or NULL if it's the previous string
- * @arg delimiter - The delimiter to be used for splitting
+ * @arg delim - The delimiter to be used for splitting
+ * @return Pointer to the beginning of the token
  */
-char* str_tok( char* str, const char delimiter )
+char* str_tok( char* str, char delim )
 {
+	char* begin;
 	register char* s;
-	char* beginning;
-	static char* prev_token = NULL;
-	
-	s = str ? str : prev_token;
-	beginning = s;
 
-	if ( !s ) return NULL;
+	s = str ? str : last;
+	if ( !s || !*s ) return NULL;
+
+	for ( ; *s == delim; s++ ) {}
+	begin = s;
 
 	for ( ; *s; s++ )
 	{
-		if ( *s == delimiter )
-		{
-			while ( *s == delimiter ) { *s++ = '\0'; }
+		if ( *s != delim ) continue;
 
-			prev_token = s;
-			return beginning;
-		}
+		*s++ = '\0';
+		last = *s ? s : NULL;
+
+		return *begin ? begin : NULL;
 	}
 
-	prev_token = NULL;
-	return beginning;
+	last = NULL;
+	return *begin ? begin : NULL;
 }
 
-wchar_t* wstr_tok( wchar_t* str, const wchar_t delimiter )
+wchar_t* wstr_tok( wchar_t* str, wchar_t delim )
 {
+	wchar_t* begin;
 	register wchar_t* s;
-	wchar_t* beginning;
-	static wchar_t* prev_token = NULL;
 
-	s = str ? str : prev_token;
-	beginning = s;
+	s = str ? str : wlast;
+	if ( !s || !*s ) return NULL;
 
-	if ( !s ) return NULL;
+	for ( ; *s == delim; s++ ) {}
+	begin = s;
 
-	for ( ; *s; s += sizeof(wchar_t) )
+	for ( ; *s; s++ )
 	{
-		if ( *s == delimiter )
-		{
-			while ( *s == delimiter ) { *s = '\0'; s += sizeof(wchar_t); }
+		if ( *s != delim ) continue;
 
-			prev_token = s;
-			return beginning;
+		*s++ = '\0';
+		wlast = *s ? s : NULL;
+
+		return *begin ? begin : NULL;
+	}
+
+	wlast = NULL;
+	return *begin ? begin : NULL;
+}
+
+/**
+ * Returns the rest of the string after the usage of str_tok. Cleans up
+ * leading delimiters first.
+ * @arg delim - The delimiter to be used for splitting
+ */
+char* str_tok_end( char delim )
+{
+	if ( !last | !*last) return NULL;
+
+	for ( ; *last == delim; last++ ) {}
+	return last;
+}
+
+wchar_t* wstr_tok_end( wchar_t delim )
+{
+	if ( !wlast | !*wlast) return NULL;
+
+	for ( ; *wlast == delim; wlast++ ) {}
+	return wlast;
+}
+
+/**
+ * Returns the number of tokens separated by a given delimiter.
+ * @arg str - The string to be split
+ * @arg delim - The delimiter to be used for counting
+ * @return The number of tokens found
+ */
+uint32 str_numtok( const char* str, char delim )
+{
+	register const char* s;
+	uint32 tokens;
+
+	if ( !str || !*str ) return 0;
+
+	tokens = *str != delim ? 1 : 0;
+
+	for ( s = str; *s; s++ )
+	{
+		if ( *s != delim ) continue;
+
+		for ( ; *s == delim; s++ ) { /* Ignore multiple delims */ }
+		if ( *s ) tokens++;
+		else break;
+	}
+
+	return tokens;
+}
+
+uint32 wstr_numtok( const wchar_t* str, wchar_t delim )
+{
+	register const wchar_t* s;
+	uint32 tokens;
+
+	if ( !str || !*str ) return 0;
+
+	tokens = *str != delim ? 1 : 0;
+
+	for ( s = str; *s; s++ )
+	{
+		if ( *s != delim ) continue;
+
+		for ( ; *s == delim; s++ ) { /* Ignore multiple delims */ }
+		if ( *s ) tokens++;
+		else break;
+	}
+
+	return tokens;
+}
+
+/**
+ * Returns whether the given string is a number (integer) or not.
+ * @arg text - The string to be checked
+ * @return true if the string is an unsigned integer, false otherwise
+ */
+bool str_isnum( const char* text )
+{
+	register const char* s = text;
+
+	if ( !*s ) return false;
+	for ( ;; )
+	{
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+	}
+
+	return true;
+}
+
+bool wstr_isnum( const wchar_t* text )
+{
+	register const wchar_t* s = text;
+
+	if ( !*s ) return false;
+	for ( ;; )
+	{
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+		if ( !*s ) break; if ( *s < '0' || *s > '9' ) return false; ++s;
+	}
+
+	return true;
+}
+
+/**
+ * Returns whether substr is a part of str. Ignores case.
+ * @arg str - The main string
+ * @arg substr - The looked substring
+ * @return Pointer to the first occurance of substr within str, NULL if it was not found
+ */
+static __inline int __str_ccmp_case( char c1, char c2 )
+{
+	if ( c1 >= 'A' && c1 <= 'Z' ) { c1 += 0x20; }
+	if ( c2 >= 'A' && c2 <= 'Z' ) { c2 += 0x20; }
+	return ( c1 == c2 );
+}
+
+static __inline int __wstr_ccmp_case( wchar_t c1, wchar_t c2 )
+{
+	if ( c1 >= 'A' && c1 <= 'Z' ) { c1 += 0x20; }
+	if ( c2 >= 'A' && c2 <= 'Z' ) { c2 += 0x20; }
+	return ( c1 == c2 );
+}
+
+const char* str_isin( const char* str, const char* substr )
+{
+	register const char *s1, *s2;
+	const char* match;
+
+	for ( s1 = str, s2 = substr; *s1; s1++ )
+	{
+		if ( __str_ccmp_case( *s1, *s2 ) )
+		{
+			match = s1;
+
+			while ( __str_ccmp_case( *s1++, *s2++ ) )
+			{
+				if ( !*s2 ) return match;
+				if ( !*s1 ) return NULL;
+			}
+
+			s2 = substr;
 		}
 	}
 
-	prev_token = NULL;
-	return beginning;
+	return NULL;
+}
+
+const wchar_t* wstr_isin( const wchar_t* str, const wchar_t* substr )
+{
+	register const wchar_t *s1, *s2;
+	const wchar_t* match;
+
+	for ( s1 = str, s2 = substr; *s1; s1++ )
+	{
+		if ( __wstr_ccmp_case( *s1, *s2 ) )
+		{
+			match = s1;
+
+			while ( __wstr_ccmp_case( *s1++, *s2++ ) )
+			{
+				if ( !*s1 ) return NULL;
+				if ( !*s2 ) return match;
+			}
+
+			s2 = substr;
+		}
+	}
+
+	return NULL;
 }
 
 /**
