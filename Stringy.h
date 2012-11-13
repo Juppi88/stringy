@@ -14,7 +14,7 @@
 #ifndef __STRINGY_H
 #define __STRINGY_H
 
-#include "Defines.h"
+#include "stdtypes.h"
 #include <stdio.h>
 #include <wchar.h>
 

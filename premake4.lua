@@ -1,6 +1,6 @@
 -- A generic C string library
 
-project "Stringy"
+project "Lib-Stringy"
 	kind "StaticLib"
 	language "C"
 	files { "**.h", "**.c", "premake4.lua" }
