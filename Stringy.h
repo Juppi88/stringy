@@ -4,7 +4,6 @@
  * FILE:		Stringy.h
  * LICENCE:		See Licence.txt
  * PURPOSE:		Re-written standard operations on C strings.
- *				Originally written for Mylly Game Engine.
  *
  *				(c) Tuomo Jauhiainen 2012
  *
