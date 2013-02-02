@@ -18,7 +18,7 @@
 #include <alloca.h>
 #endif
 
-#define GETWLENGTH(x) x /= sizeof(wchar_t) // Nasty hack for wide string lengths TODO: clean up later
+#define GETWLENGTH(x) x /= sizeof(wchar_t) // Nasty hack for wide string lengths
 
 static char*		last	= NULL;
 static wchar_t*		wlast	= NULL;
