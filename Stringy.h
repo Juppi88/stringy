@@ -5,7 +5,7 @@
  * LICENCE:		See Licence.txt
  * PURPOSE:		Re-written standard operations on C strings.
  *
- *				(c) Tuomo Jauhiainen 2012
+ *				(c) Tuomo Jauhiainen 2012-13
  *
  **********************************************************************/
 

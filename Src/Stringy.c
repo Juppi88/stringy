@@ -1,22 +1,18 @@
 /**********************************************************************
  *
  * PROJECT:		Stringy
- * FILE:		Stringy.h
+ * FILE:		Stringy.c
  * LICENCE:		See Licence.txt
  * PURPOSE:		Re-written standard operations on C strings.
  *
- *				(c) Tuomo Jauhiainen 2012
+ *				(c) Tuomo Jauhiainen 2012-13
  *
  **********************************************************************/
 
 #include "Stringy.h"
-#include <malloc.h>
+#include "Platform/Alloc.h"
 #include <string.h>
 #include <assert.h>
-
-#ifndef _WIN32
-#include <alloca.h>
-#endif
 
 #define GETWLENGTH(x) x /= sizeof(wchar_t) // Nasty hack for wide string lengths
 
@@ -141,7 +137,7 @@ void str_ins( char* dest, const char* source, size_t size, size_t pos )
 
 	if ( pos >= size ) return;
 
-	temp = tmp = alloca( size );
+	temp = tmp = mem_stack_alloc( size );
 
 	for ( s = dest; s < dest+pos && *s; )
 		*tmp++ = *s++;
@@ -155,6 +151,7 @@ void str_ins( char* dest, const char* source, size_t size, size_t pos )
 	*tmp = '\0';
 
 	str_cpy( dest, temp, size );
+	mem_stack_free( temp );
 }
 
 void wstr_ins( wchar_t* dest, const wchar_t* source, size_t size, size_t pos )
@@ -162,11 +159,11 @@ void wstr_ins( wchar_t* dest, const wchar_t* source, size_t size, size_t pos )
 	wchar_t *tmp, *temp;
 	register wchar_t* s;
 
-	pos *= sizeof(wchar_t);
+	pos = pos * sizeof(wchar_t);
 
 	if ( pos >= size ) return;
 
-	temp = tmp = alloca( size );
+	temp = tmp = mem_stack_alloc( size );
 
 	for ( s = dest; s < dest+pos && *s; )
 		*tmp++ = *s++;
@@ -180,6 +177,7 @@ void wstr_ins( wchar_t* dest, const wchar_t* source, size_t size, size_t pos )
 	*tmp = '\0';
 
 	wstr_cpy( dest, temp, size );
+	mem_stack_free( temp );
 }
 
 /**
@@ -271,7 +269,7 @@ wchar_t* wstr_tok( wchar_t* str, wchar_t delim )
  */
 char* str_tok_end( char delim )
 {
-	if ( !last | !*last) return NULL;
+	if ( !last || !*last ) return NULL;
 
 	for ( ; *last == delim; last++ ) {}
 	return last;
@@ -279,7 +277,7 @@ char* str_tok_end( char delim )
 
 wchar_t* wstr_tok_end( wchar_t delim )
 {
-	if ( !wlast | !*wlast) return NULL;
+	if ( !wlast || !*wlast ) return NULL;
 
 	for ( ; *wlast == delim; wlast++ ) {}
 	return wlast;
