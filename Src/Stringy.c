@@ -137,7 +137,7 @@ void str_ins( char* dest, const char* source, size_t size, size_t pos )
 
 	if ( pos >= size ) return;
 
-	temp = tmp = mem_stack_alloc( size );
+	temp = tmp = (char*)mem_stack_alloc( size );
 
 	for ( s = dest; s < dest+pos && *s; )
 		*tmp++ = *s++;
@@ -163,9 +163,9 @@ void wstr_ins( wchar_t* dest, const wchar_t* source, size_t size, size_t pos )
 
 	if ( pos >= size ) return;
 
-	temp = tmp = mem_stack_alloc( size );
+	temp = tmp = (wchar_t*)mem_stack_alloc( size );
 
-	for ( s = dest; s < dest+pos && *s; )
+	for ( s = dest; (size_t)s < (size_t)dest + pos && *s; )
 		*tmp++ = *s++;
 
 	while ( *source )
