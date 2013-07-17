@@ -4,7 +4,7 @@ project "Lib-Stringy"
 	kind "StaticLib"
 	language "C"
 	files { "**.h", "**.c", "premake4.lua" }
-	vpaths { [""] = { "../Libraries/Stringy/Src", "../Libraries/Stringy" } }
+	vpaths { [""] = { "../Libraries/Stringy" } }
 	includedirs { "." }
 	location ( "../../Projects/" .. os.get() .. "/" .. _ACTION )
 	
