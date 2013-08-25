@@ -46,6 +46,32 @@ bool wstr_equal( const wchar_t* str1, const wchar_t* str2 )
 }
 
 /**
+ * Tests whether the two given strings match. Case insensitive.
+ * @arg str1 - String 1
+ * @arg str2 - String 2
+ * @return true if the strings were equal, false otherwise
+ */
+bool str_case_equal( const char* str1, const char* str2 )
+{
+	while ( tolower( *str1 ) == tolower( *str2++ ) )
+	{
+		if ( !*str1++ ) return true;
+	}
+
+	return false;
+}
+
+bool wstr_case_equal( const wchar_t* str1, const wchar_t* str2 )
+{
+	while ( tolower( *str1 ) == tolower( *str2++ ) )
+	{
+		if ( !*str1++ ) return true;
+	}
+
+	return false;
+}
+
+/**
  * Copies a string into another buffer.
  * @arg dest - Destination buffer
  * @arg source - Source buffer
