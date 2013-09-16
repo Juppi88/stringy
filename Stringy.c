@@ -12,6 +12,7 @@
 #include "Stringy.h"
 #include "Platform/Alloc.h"
 #include <string.h>
+#include <ctype.h>
 #include <assert.h>
 
 #define GETWLENGTH(x) x /= sizeof(wchar_t) // Nasty hack for wide string lengths
