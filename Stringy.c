@@ -434,6 +434,7 @@ const char* str_isin( const char* str, const char* substr )
 				if ( !*s1 ) return NULL;
 			}
 
+			s1 = match;
 			s2 = substr;
 		}
 	}
